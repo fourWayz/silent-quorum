@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "vitest run",
+    "build": "tsc -p tsconfig.json --noEmit false; node scripts/copy-managed.mjs",
     "compact": "npm run compact:core && npm run compact:registry && npm run compact:claims",
     "compact:core": "compact compile src/quorum-core/silent-quorum.compact src/quorum-core/managed",
     "compact:registry": "compact compile src/quorum-registry/quorum-registry.compact src/quorum-registry/managed",
