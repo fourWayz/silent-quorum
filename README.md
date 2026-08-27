@@ -102,6 +102,17 @@ into, that table is the authoritative source.
 - **Registry and Claim Ledger cannot verify Core's state.** Stated
   repeatedly on purpose — it's the single most important fact about this
   architecture.
+- **Reusing an identity secret across quorums is observably linkable.**
+  The registration leaf (`identityCommitment`) is a hash of the identity
+  secret alone — it is not domain-separated by org/quorum/action, unlike
+  the pledge nullifier, which is. Registering with the same secret in two
+  different quorums produces the exact same leaf bytes in both quorums'
+  public `eligibility_tree`s, so an observer comparing two quorums' trees
+  can tell the same participant registered in both. Pledges themselves
+  stay unlinkable (nullifiers are domain-separated), but registration does
+  not. **Use a fresh identity secret per quorum** to avoid this. See
+  `ARCHITECTURE.md`'s privacy section and
+  `silent-quorum.test.ts`'s "identity-commitment linkability" tests.
 
 ## Current implementation status
 

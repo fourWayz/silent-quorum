@@ -61,6 +61,33 @@ on-chain-enforced link.
 | Recipient-secret ownership for a claim | Whether a quorum's threshold was reached "for a good reason" |
 | Registry first-write-wins, append-only registration | — |
 
+### Known privacy limitation: identity-commitment reuse across quorums
+
+`leafFor()` (mirrored on-chain by `pad(32, "silent-quorum:leaf:")` in
+`silent-quorum.compact`'s `pledge()`) hashes only the identity secret —
+it is **not** domain-separated by `org_id`/`quorum_id`/`action_id`. The
+pledge nullifier *is* domain-separated (`persistentHash([secret,
+domain])` where `domain` folds in org/quorum/action), so pledges made
+with the same secret in two different quorums are cryptographically
+unlinkable to each other. But `register()`'s `identityCommitment`
+argument — the Merkle leaf itself — is not: registering the same secret
+in two separately-deployed Core instances inserts byte-identical leaves
+into both instances' public `eligibility_tree`s. Anyone comparing the two
+trees can observe that the same participant registered in both quorums,
+even though they cannot tell whether that participant later pledged in
+either one.
+
+This is a real limitation, not a hypothetical: `silent-quorum.test.ts`
+demonstrates it directly (`commitmentFor(secret)` is deliberately reused
+across `quorumA`/`quorumB` in the existing cross-quorum pledge tests, and
+a dedicated "identity-commitment linkability" test suite confirms both
+the collision with a reused secret and the absence of one with a fresh
+per-quorum secret). The practical mitigation is entirely client-side: use
+a fresh identity secret per quorum. Fixing this on-chain — folding
+org/quorum/action into the leaf formula the same way the nullifier does —
+would change the leaf/commitment format and is out of scope for this
+audit pass; it is left as an open item, not silently ignored.
+
 ---
 
 ## Contract A — Quorum Core
@@ -96,6 +123,23 @@ transaction, one proof** — verified on live devnet three times over now
 4. **Lifecycle.** `close_registration()` and `cancel()`, both
    issuer-gated, both one-way. No expiration exists — see "Issuer
    authorization" for why.
+
+**Post-fire behavior, stated explicitly.** Neither `register()` nor
+`pledge()` checks `fired`: new identities can still be registered, and
+already-registered identities can still pledge (and be counted in
+`tally`), after the quorum has fired. This is deliberate, not an
+oversight — see Milestone 1's fix for why an `assert(!fired)` guard on
+pledge is actively wrong (it would revert, and thus drop, every honest
+post-fire pledge instead of just skipping the already-done re-fire logic).
+`fired` and `consequence_balance` are one-way: once set, nothing in this
+contract ever unsets them. Symmetrically, `cancel()` has no `!fired`
+guard either — calling it after firing is accepted and flips `cancelled`
+to `true`, but has no effect on the already-released `consequence_balance`
+or `fired` flag. `cancelled` after firing is a symbolic record only (it
+signals "the issuer no longer stands behind this quorum accepting further
+pledges") — it does not and cannot claw back a consequence already fired
+atomically in an earlier transaction. Both properties are covered by
+`silent-quorum.test.ts`.
 
 ### Ledger state
 
