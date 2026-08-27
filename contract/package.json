@@ -1,0 +1,23 @@
+{
+  "name": "@silent-quorum/contract",
+  "version": "0.1.0",
+  "description": "Silent Quorum Milestone 1 — Compact contract, witnesses, and tests",
+  "main": "index.js",
+  "scripts": {
+    "test": "vitest run",
+    "compact": "compact compile src/silent-quorum.compact src/managed/silent-quorum"
+  },
+  "keywords": [],
+  "license": "MIT",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "@midnight-ntwrk/compact-runtime": "0.16.0",
+    "@midnight-ntwrk/midnight-js-network-id": "^4.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.5.1",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.0"
+  }
+}

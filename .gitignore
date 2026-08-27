@@ -1,0 +1,11 @@
+node_modules/
+dist/
+*.log
+*.tsbuildinfo
+.env
+.env.*
+.DS_Store
+
+# Compact compiler output (circuits, proving/verifying keys) - regenerate
+# via npm run compact, same convention as the official Midnight examples.
+managed/
