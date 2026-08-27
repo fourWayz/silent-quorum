@@ -94,7 +94,7 @@ export function ClaimRitual({
           <span>
             {chosen.fired
               ? "This quorum has already fired — an unremarkable claim."
-              : "This quorum has NOT reached its threshold yet. The Claim Ledger has no way to check that and will accept the claim anyway — this is the documented trust boundary from Milestone 2's audit, not a bug."}
+              : "This quorum has NOT reached its threshold yet. The Claim Ledger has no way to check that and will accept the claim anyway — this is a documented trust boundary of the protocol, not a bug."}
           </span>
         </div>
       ) : null}

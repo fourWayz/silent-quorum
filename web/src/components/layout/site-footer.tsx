@@ -35,7 +35,7 @@ export function SiteFooter() {
           </div>
         </div>
         <div className="mt-10 flex flex-col gap-2 border-t border-white/[0.06] pt-6 sm:flex-row sm:items-center sm:justify-between">
-          <p className="font-mono text-[11px] text-ink-400">© 2026 Silent Quorum. Milestone 1–2 frozen protocol.</p>
+          <p className="font-mono text-[11px] text-ink-400">© 2026 Silent Quorum. Protocol frozen and audited.</p>
           <DevnetStatusLine />
         </div>
       </div>

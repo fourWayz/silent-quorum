@@ -2,10 +2,10 @@ import "server-only";
 
 // A single in-memory process holds every simulated contract instance for
 // this demo — no database. State resets on server restart. That is a
-// genuine, disclosed limitation of a hackathon-scale deployment (see
-// README's "Known Limitations" in the frontend milestone report), not an
-// attempt to hide it. Kept on `globalThis` so Next's dev-mode module
-// reloading doesn't wipe state on every file save.
+// genuine, disclosed limitation of this deployment (see web/README.md's
+// "Known Limitations"), not an attempt to hide it. Kept on `globalThis`
+// so Next's dev-mode module reloading doesn't wipe state on every file
+// save.
 //
 // This module is the ONLY place in the web app that touches the compiled
 // contract simulators directly — everything else goes through

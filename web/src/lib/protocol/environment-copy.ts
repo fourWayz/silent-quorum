@@ -6,7 +6,7 @@ export const ENVIRONMENT_COPY: Record<EnvironmentInfo["kind"], Omit<EnvironmentI
   simulator: {
     label: "Simulator",
     description:
-      "Every pledge here runs the real compiled Compact circuits — the exact contracts audited in Milestone 2 — executed server-side against an in-memory ledger. Not a live network."
+      "Every pledge here runs the real compiled Compact circuits — the same independently audited contracts — executed server-side against an in-memory ledger. Not a live network."
   },
   demo: {
     label: "Demo Mode",

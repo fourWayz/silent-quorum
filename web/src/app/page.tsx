@@ -6,11 +6,12 @@ import { SectionHeading } from "@/components/ui/section-heading";
 import { QuorumCard } from "@/components/quorum/quorum-card";
 import { buttonVariants } from "@/components/ui/button";
 import { listQuorumSnapshots } from "@/lib/protocol/engine/quorum";
+import { sortQuorumsForShowcase } from "@/lib/protocol/types";
 
 export const dynamic = "force-dynamic";
 
 export default function Home() {
-  const quorums = listQuorumSnapshots().slice(0, 3);
+  const quorums = sortQuorumsForShowcase(listQuorumSnapshots()).slice(0, 3);
 
   return (
     <>
@@ -55,7 +56,7 @@ export default function Home() {
             Enter the console. Pledge without a name.
           </h2>
           <p className="mt-4 max-w-xl text-base leading-relaxed text-ink-200">
-            Every pledge in the console runs the real compiled Compact circuits audited in Milestone 2 — not a
+            Every pledge in the console runs the real, independently audited compiled Compact circuits — not a
             mockup.
           </p>
           <Link href="/console" className={buttonVariants({ variant: "primary", size: "lg", className: "mt-8" })}>

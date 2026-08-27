@@ -3,12 +3,13 @@ import { QuorumCard } from "@/components/quorum/quorum-card";
 import { EnvironmentBadge } from "@/components/environment/environment-badge";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { listQuorumSnapshots } from "@/lib/protocol/engine/quorum";
+import { sortQuorumsForShowcase } from "@/lib/protocol/types";
 
 export const metadata: Metadata = { title: "Quorums" };
 export const dynamic = "force-dynamic";
 
 export default function ConsolePage() {
-  const quorums = listQuorumSnapshots();
+  const quorums = sortQuorumsForShowcase(listQuorumSnapshots());
 
   return (
     <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8">
@@ -16,7 +17,7 @@ export default function ConsolePage() {
         <SectionHeading
           eyebrow="Quorum Console"
           title="Active quorums"
-          description="Each card below is a real, independently deployed Quorum Core instance in the simulator — the same compiled circuits audited in Milestone 2."
+          description="Each card below is a real, independently deployed Quorum Core instance in the simulator — the same compiled, independently audited circuits."
         />
         <EnvironmentBadge kind="simulator" />
       </div>

@@ -33,6 +33,24 @@ export function primaryStatus(flags: QuorumFlags): QuorumPrimaryStatus {
   return "active";
 }
 
+/** Orders quorums so the one closest to firing leads — the intended demo
+ * path opens on the quorum a judge can push over the threshold
+ * themselves, not on whichever happened to seed first. Purely a display
+ * ordering; carries no on-chain meaning. */
+export function sortQuorumsForShowcase(quorums: QuorumSnapshot[]): QuorumSnapshot[] {
+  const rank = (q: QuorumSnapshot): number => {
+    const status = primaryStatus(q);
+    if (status === "active") return 0;
+    if (status === "fired") return 1;
+    return 2; // cancelled
+  };
+  return [...quorums].sort((a, b) => {
+    const rankDiff = rank(a) - rank(b);
+    if (rankDiff !== 0) return rankDiff;
+    return a.threshold - a.tally - (b.threshold - b.tally);
+  });
+}
+
 export interface QuorumSnapshot extends QuorumFlags {
   id: string; // stable slug used for routing — not on-chain
   name: string; // human label for the demo narrative — not on-chain
@@ -45,7 +63,7 @@ export interface QuorumSnapshot extends QuorumFlags {
   actionLabel: string;
   threshold: number;
   tally: number;
-  consequenceAmount: string; // bigint rendered as string (DUST-denominated demo units)
+  consequenceAmount: string; // bigint rendered as string — an opaque recorded value, not DUST or any real token
   consequenceRecipientLabel: string;
   consequenceRecipientCommitment: string; // hex
   issuerCommitment: string; // hex

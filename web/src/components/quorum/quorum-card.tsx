@@ -1,16 +1,33 @@
 import Link from "next/link";
+import { Zap } from "lucide-react";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { QuorumStatusPill } from "@/components/ui/status-pill";
 import { primaryStatus, type QuorumSnapshot } from "@/lib/protocol/types";
 import { cn } from "@/lib/utils";
 
+const NEAR_THRESHOLD_WINDOW = 2;
+
 export function QuorumCard({ quorum }: { quorum: QuorumSnapshot }) {
   const status = primaryStatus(quorum);
   const pct = Math.min(100, Math.round((quorum.tally / quorum.threshold) * 100));
+  const remaining = quorum.threshold - quorum.tally;
+  const nearThreshold = status === "active" && remaining > 0 && remaining <= NEAR_THRESHOLD_WINDOW;
 
   return (
     <Link href={`/console/${quorum.id}`} className="group block">
-      <GlassPanel className="p-6 transition-colors duration-200 group-hover:border-signal-500/30">
+      <GlassPanel
+        className={cn(
+          "p-6 transition-colors duration-200 group-hover:border-signal-500/30",
+          nearThreshold && "border-ignition-500/40 shadow-[0_0_32px_-14px_rgba(242,165,61,0.55)]"
+        )}
+      >
+        {nearThreshold ? (
+          <div className="mb-4 -mt-1 flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.1em] text-ignition-300">
+            <Zap className="h-3.5 w-3.5" aria-hidden="true" />
+            {remaining === 1 ? "1 pledge until ignition" : `${remaining} pledges until ignition`}
+          </div>
+        ) : null}
+
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-400">{quorum.orgLabel}</p>
@@ -34,7 +51,7 @@ export function QuorumCard({ quorum }: { quorum: QuorumSnapshot }) {
                 "h-full rounded-full transition-[width] duration-500 ease-[var(--ease-out)]",
                 status === "fired" && "bg-ignition-400",
                 status === "cancelled" && "bg-mute-500",
-                status === "active" && "bg-signal-400"
+                status === "active" && (nearThreshold ? "bg-ignition-400" : "bg-signal-400")
               )}
               style={{ width: `${pct}%` }}
             />
