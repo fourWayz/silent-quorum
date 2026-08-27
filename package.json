@@ -3,7 +3,8 @@
   "private": true,
   "workspaces": [
     "contract",
-    "devnet-test"
+    "devnet-test",
+    "web"
   ],
   "overrides": {
     "@midnight-ntwrk/onchain-runtime-v3": "3.0.0"
