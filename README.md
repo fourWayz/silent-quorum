@@ -50,9 +50,14 @@ too is an open research problem, not a near-term feature.
 
 ## Current implementation status
 
-Milestone 1 only: the Compact contract, its witnesses, and a test suite
-running against the real compiled contract via `@midnight-ntwrk/compact-runtime`'s
-local simulator. No frontend, no wallet integration, no devnet deployment.
+Milestone 1: the Compact contract, its witnesses, and a test suite running
+against the real compiled contract via `@midnight-ntwrk/compact-runtime`'s
+local simulator (14 tests). Beyond that, the network-level concurrency
+question has also now been tested against a real local devnet — see
+`ARCHITECTURE.md`'s "Live-devnet concurrency test" for the full result:
+two genuinely independent pledgers raced for the same threshold-crossing
+slot, and the network rejected the stale one outright rather than letting
+both land. No frontend, no wallet UX, no mainnet deployment.
 
 ## Running the tests
 
@@ -63,15 +68,17 @@ npm run compact   # compiles the .compact source and generates proving keys
 npm test          # runs the suite against the compiled contract
 ```
 
+The live-devnet race test (`devnet-test/`) requires a running local
+standalone network — see `ARCHITECTURE.md` for the exact stack and how to
+reproduce it.
+
 ## Known limitations
 
 - The running pledge count is public (see above).
-- The true concurrency question — what happens when two independently
-  proved pledge transactions race against a live ledger — could not be
-  tested in Milestone 1's in-process simulator, which executes circuit
-  calls sequentially and has no concept of two transactions racing a real
-  network. It needs a full local devnet (node + indexer + proof server) to
-  observe. See `ARCHITECTURE.md`.
+- The live-devnet race test covered one race, at one timing gap (263ms),
+  between two pledgers. It's a real, positive result, not an exhaustive
+  proof of the network's conflict handling under every timing or load
+  condition — see `ARCHITECTURE.md`.
 - DUST sponsorship is entirely unexercised at this milestone; multi-sponsor
   mechanics remain unresolved.
 - This is a composition of two known mechanisms (anonymous group

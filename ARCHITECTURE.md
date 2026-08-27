@@ -83,18 +83,90 @@ documentation alone:
   actual compiled contract (via `@midnight-ntwrk/compact-runtime`'s local
   simulator — the same pattern `midnightntwrk/example-counter` uses).
 
-## What Milestone 1 did *not* prove
+## Live-devnet concurrency test (resolved)
 
 The in-process simulator executes one circuit call against one mutable
-context at a time. It has no model of two independently-proved transactions
-racing against a live network, so it cannot answer the one question the
+context at a time — it has no model of two independently-proved transactions
+racing against a live network, so it could not answer the one question the
 pre-implementation spec flagged as highest-priority: does Midnight reject a
 transaction proved against now-stale state when two pledges race for the
-same threshold crossing? The tests in the "sequential exactly-once guard"
-and "two proofs built from the same pre-crossing snapshot" suites prove the
-*circuit logic* is self-consistent; they do not prove the *network* resolves
-a genuine race correctly. That requires a local devnet (node + indexer +
-proof server) and is the next empirical step, not a closed question.
+same threshold crossing? That required an actual local devnet, standing up
+the exact stack the official support matrix pairs with Compact toolchain
+0.31.1 (`midnight-node:1.0.0`, `indexer-standalone:4.3.3`,
+`proof-server:8.1.0`, via `midnightntwrk/midnight-local-dev`'s
+`standalone.yml`).
+
+**Method.** A contract was deployed with `threshold=4` and driven to
+`tally=2` via two uncontested sequential pledges. Two more identities
+(`p3`, `p4`) were registered. Two genuinely separate OS processes — not two
+async branches sharing one process, which turned out to matter (see below)
+— then each independently queried the live ledger (both observed
+`tally=2, fired=false`), built a proof against that state, and submitted a
+pledge. Launch was 263ms apart:
+
+| Racer | Pre-submission read | Submission time (UTC) | Outcome |
+|---|---|---|---|
+| Bob (p4) | tally=2, fired=false | 10:57:31.343 | **Accepted** — block 780, tally→3 |
+| Alice (p3) | tally=2, fired=false | 10:57:31.606 | **Rejected by the node** — `TransactionInvalidError: Transaction is invalid and was rejected by the node` |
+
+Final state after the race: `tally=3, fired=false` — not 4, not a double
+count. Alice's nullifier was never spent (her transaction never applied at
+all), so she retried unmodified moments later, now correctly reading
+`tally=3`:
+
+| Racer | Pre-submission read | Outcome |
+|---|---|---|
+| Alice (p3), retry | tally=3, fired=false | **Accepted** — block 838, `tally=4, fired=true, consequence_balance=1000` |
+
+**Result: the network itself enforces exactly-once, not just the
+contract's `assert(!fired)` guard.** A transaction proved against
+already-superseded public state is rejected outright at node validation,
+before it ever reaches the circuit's own logic. Two conflicting pledges
+cannot both land; at most one does, and the loser's nullifier is never
+consumed, so retrying is always safe. This is a materially stronger
+guarantee than the in-process simulator could demonstrate, and it closes
+the one question this project's research repeatedly flagged as open.
+
+**A real, separate finding along the way:** the first version of this test
+ran both racers as concurrent async branches of *one* Node process, sharing
+`@midnight-ntwrk/midnight-js-level-private-state-provider`'s LevelDB-backed
+storage. That failed intermittently with `Database failed to open` —
+sometimes on Alice's side, sometimes on Bob's — even with each account
+pointed at a distinct store. That's a local client-library concurrency
+limit, not a network property, and it invalidated that version of the test
+(one racer never even got far enough to submit). Splitting into two
+independent OS processes (`setup.ts` then two `racer.ts` invocations) fixed
+it and is arguably the more honest test anyway — two real independent
+pledgers are two separate machines, not two `Promise.all` branches.
+
+**Not yet tested:** races with the ordering reversed, races closer than
+263ms, races between more than two simultaneous pledgers, and behavior
+under sustained/adversarial concurrent load. The result above is a real,
+positive data point, not an exhaustive proof of the network's conflict
+resolution under every condition.
+
+**Reproducing it:**
+
+```sh
+# 1. Bring up the exact stack the support matrix pairs with toolchain 0.31.1:
+git clone https://github.com/midnightntwrk/midnight-local-dev.git
+cd midnight-local-dev && npm install
+cp .env.example .env   # adjust MN_*_PORT if the defaults collide with anything
+docker compose -f standalone.yml up -d
+cp accounts.example.json accounts.json
+npm start -- --fund-config ./accounts.json   # funds Alice and Bob with NIGHT + DUST
+
+# 2. From this repo:
+cd devnet-test && npm install
+npx tsx src/setup.ts            # deploys, reaches tally=2, registers p3/p4
+npx tsx src/racer.ts alice p3 & npx tsx src/racer.ts bob p4 &   # the race
+wait
+```
+
+Two important details if you adapt this: each racer must be its own OS
+process (see the LevelDB finding above), and `devnet-test/src/shared.ts`'s
+`envConfig` must point at whatever ports `midnight-local-dev`'s `.env`
+actually published.
 
 ## Security invariants
 
@@ -105,7 +177,7 @@ proof server) and is the next empirical step, not a closed question.
 | I3 | A pledge doesn't reveal which commitment produced it | Verified by construction (hidden-path proof); not independently audited beyond this milestone |
 | I4 | Consequence cannot execute before threshold | Verified, tested |
 | I5 | Threshold-crossing pledge fires the consequence in the same transaction | Verified, tested |
-| I6 | Consequence cannot execute twice | Verified for sequential application, tested; **not proven under real network concurrency** |
+| I6 | Consequence cannot execute twice | Verified for sequential application (tested) **and under real live-devnet concurrency** (see "Live-devnet concurrency test" above) |
 | I7 | `fired` is irreversible | Verified, tested |
 | I8 | A pledge can't replay across quorums | Verified, tested |
 | I9 | Secret and path never enter disclosed state | Verified, tested (explicit regression test) |
