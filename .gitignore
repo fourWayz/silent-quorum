@@ -15,5 +15,6 @@ midnight-level-db/
 devnet-test/midnight-level-db/
 
 # devnet-test run artifacts (ephemeral, tied to a specific local devnet run)
-devnet-test/src/race-address.json
+devnet-test/src/*-address.json
+devnet-test/src/*-result-*.json
 devnet-test/src/result-*.json

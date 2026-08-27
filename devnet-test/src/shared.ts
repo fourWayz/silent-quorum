@@ -96,14 +96,23 @@ export class DevnetWalletProvider implements MidnightProvider, WalletProvider {
   }
 }
 
-export function buildProviders(walletProvider: DevnetWalletProvider, accountId: string) {
+// contractDir must match the specific contract being deployed/called — e.g.
+// "silent-quorum", "quorum-registry", "consequence-claim-ledger". Getting
+// this wrong doesn't fail loudly at construction; it fails later with a
+// ZKConfigurationReadError when the wrong contract's proving keys don't
+// contain the circuit being called (found the hard way, once).
+export function buildProviders(
+  walletProvider: DevnetWalletProvider,
+  accountId: string,
+  contractDir: string = "silent-quorum"
+) {
   const zkConfigProvider = new NodeZkConfigProvider(
-    new URL("../../contract/src/managed/silent-quorum", import.meta.url).pathname
+    new URL(`../../contract/src/managed/${contractDir}`, import.meta.url).pathname
   );
   return {
     privateStateProvider: levelPrivateStateProvider({
-      privateStateStoreName: `silent-quorum-private-state-${accountId}`,
-      signingKeyStoreName: `silent-quorum-signing-keys-${accountId}`,
+      privateStateStoreName: `${contractDir}-private-state-${accountId}`,
+      signingKeyStoreName: `${contractDir}-signing-keys-${accountId}`,
       privateStoragePasswordProvider: () => "SilentQuorum-RaceTest-2026!",
       accountId
     }),
