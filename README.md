@@ -117,10 +117,15 @@ into, that table is the authoritative source.
 ## Current implementation status
 
 All three contracts implemented, compiled against toolchain 0.31.1
-(ledger-8.0.2 — matched to current mainnet), with 52 tests passing against
+(ledger-8.0.2 — matched to current mainnet), with 55 tests passing against
 the real compiled contracts via `@midnight-ntwrk/compact-runtime`'s local
 simulator, plus four separate live-devnet race scenarios (see
-`ARCHITECTURE.md`). No frontend, no wallet UX, no mainnet deployment.
+`ARCHITECTURE.md`). Protocol/backend scope is frozen as of Milestone 2.
+
+A frontend/demo now exists — see [web/README.md](web/README.md) — built
+against the Simulator (the same compiled contracts, executed server-side)
+plus a real, honestly-labeled local-devnet connectivity check. No wallet
+UX or mainnet deployment yet.
 
 ## Running the tests
 
