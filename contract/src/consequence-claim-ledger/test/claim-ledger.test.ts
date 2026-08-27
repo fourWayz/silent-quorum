@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { setNetworkId } from "@midnight-ntwrk/midnight-js-network-id";
-import { ClaimLedgerSimulator } from "../claim-ledger-simulator.js";
-import { b32, recipientCommitmentFor, arbiterCommitmentFor, claimIdFor } from "../domain.js";
-import { ClaimStatus } from "../managed/consequence-claim-ledger/contract/index.js";
+import { ClaimLedgerSimulator } from "../simulator.js";
+import { b32, recipientCommitmentFor, arbiterCommitmentFor, claimIdFor } from "../../domain.js";
+import { ClaimStatus } from "../managed/contract/index.js";
 
 setNetworkId("undeployed");
 

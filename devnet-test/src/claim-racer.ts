@@ -12,8 +12,8 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { setNetworkId } from "@midnight-ntwrk/midnight-js-network-id";
 import { findDeployedContract } from "@midnight-ntwrk/midnight-js-contracts";
 import { CompiledContract } from "@midnight-ntwrk/midnight-js-protocol/compact-js";
-import * as ClaimLedger from "../../contract/src/managed/consequence-claim-ledger/contract/index.js";
-import { claimWitnesses, type ClaimPrivateState } from "../../contract/src/claim-witnesses.js";
+import * as ClaimLedger from "../../contract/src/consequence-claim-ledger/managed/contract/index.js";
+import { claimWitnesses, type ClaimPrivateState } from "../../contract/src/consequence-claim-ledger/witnesses.js";
 import { DevnetWalletProvider, buildProviders, ALICE_MNEMONIC, BOB_MNEMONIC, secretFor } from "./shared.js";
 
 const [, , who, actionSuffix] = process.argv;
@@ -25,7 +25,7 @@ const CompiledClaimLedger = CompiledContract.make<ClaimLedger.Contract<ClaimPriv
   ClaimLedger.Contract as any
 ).pipe(
   CompiledContract.withWitnesses(claimWitnesses),
-  CompiledContract.withCompiledFileAssets("../../contract/src/managed/consequence-claim-ledger")
+  CompiledContract.withCompiledFileAssets("../../contract/src/consequence-claim-ledger/managed")
 );
 
 const ARBITER_SECRET = secretFor("arbiter");

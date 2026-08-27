@@ -15,8 +15,8 @@ import { setNetworkId } from "@midnight-ntwrk/midnight-js-network-id";
 import { deployContract, findDeployedContract } from "@midnight-ntwrk/midnight-js-contracts";
 import { CompiledContract } from "@midnight-ntwrk/midnight-js-protocol/compact-js";
 import { persistentHash, CompactTypeVector, Bytes32Descriptor } from "@midnight-ntwrk/compact-runtime";
-import * as SilentQuorum from "../../contract/src/managed/silent-quorum/contract/index.js";
-import { witnesses, type SilentQuorumPrivateState } from "../../contract/src/witnesses.js";
+import * as SilentQuorum from "../../contract/src/quorum-core/managed/contract/index.js";
+import { witnesses, type SilentQuorumPrivateState } from "../../contract/src/quorum-core/witnesses.js";
 import { DevnetWalletProvider, buildProviders, ALICE_MNEMONIC, BOB_MNEMONIC, b32, secretFor } from "./shared.js";
 
 const logger = pino({ level: "info", transport: { target: "pino-pretty" } });
@@ -32,7 +32,7 @@ const CompiledSilentQuorum = CompiledContract.make<SilentQuorum.Contract<SilentQ
   SilentQuorum.Contract as any
 ).pipe(
   CompiledContract.withWitnesses(witnesses),
-  CompiledContract.withCompiledFileAssets("../../contract/src/managed/silent-quorum")
+  CompiledContract.withCompiledFileAssets("../../contract/src/quorum-core/managed")
 );
 
 async function main() {

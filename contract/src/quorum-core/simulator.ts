@@ -16,7 +16,7 @@ import {
   Contract,
   type Ledger,
   ledger
-} from "./managed/silent-quorum/contract/index.js";
+} from "./managed/contract/index.js";
 import {
   type SilentQuorumPrivateState,
   witnesses

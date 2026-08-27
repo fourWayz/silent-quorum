@@ -4,7 +4,7 @@
 // role-gate pattern as Core's issuer authorization (see domain.ts).
 
 import type { WitnessContext } from "@midnight-ntwrk/compact-runtime";
-import type { Ledger } from "./managed/quorum-registry/contract/index.js";
+import type { Ledger } from "./managed/contract/index.js";
 
 export type RegistryPrivateState = {
   readonly operatorSecret: Uint8Array;

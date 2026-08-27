@@ -13,8 +13,8 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { setNetworkId } from "@midnight-ntwrk/midnight-js-network-id";
 import { findDeployedContract } from "@midnight-ntwrk/midnight-js-contracts";
 import { CompiledContract } from "@midnight-ntwrk/midnight-js-protocol/compact-js";
-import * as Registry from "../../contract/src/managed/quorum-registry/contract/index.js";
-import { registryWitnesses, type RegistryPrivateState } from "../../contract/src/registry-witnesses.js";
+import * as Registry from "../../contract/src/quorum-registry/managed/contract/index.js";
+import { registryWitnesses, type RegistryPrivateState } from "../../contract/src/quorum-registry/witnesses.js";
 import { b32 } from "../../contract/src/domain.js";
 import { DevnetWalletProvider, buildProviders, ALICE_MNEMONIC, BOB_MNEMONIC, secretFor } from "./shared.js";
 
@@ -27,7 +27,7 @@ const CompiledRegistry = CompiledContract.make<Registry.Contract<RegistryPrivate
   Registry.Contract as any
 ).pipe(
   CompiledContract.withWitnesses(registryWitnesses),
-  CompiledContract.withCompiledFileAssets("../../contract/src/managed/quorum-registry")
+  CompiledContract.withCompiledFileAssets("../../contract/src/quorum-registry/managed")
 );
 
 const OPERATOR_SECRET = secretFor("registry-operator");

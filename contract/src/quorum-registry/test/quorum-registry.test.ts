@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { setNetworkId } from "@midnight-ntwrk/midnight-js-network-id";
-import { RegistrySimulator, addressFor } from "../registry-simulator.js";
-import { operatorCommitmentFor, b32 } from "../domain.js";
-import { QuorumStatus } from "../managed/quorum-registry/contract/index.js";
+import { RegistrySimulator, addressFor } from "../simulator.js";
+import { operatorCommitmentFor, b32 } from "../../domain.js";
+import { QuorumStatus } from "../managed/contract/index.js";
 
 setNetworkId("undeployed");
 

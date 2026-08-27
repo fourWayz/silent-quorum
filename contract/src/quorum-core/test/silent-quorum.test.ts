@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { setNetworkId } from "@midnight-ntwrk/midnight-js-network-id";
-import { SilentQuorumSimulator, type QuorumConfig } from "../silent-quorum-simulator.js";
-import { b32, leafFor as commitmentFor, issuerCommitmentFor, configCommitmentFor } from "../domain.js";
+import { SilentQuorumSimulator, type QuorumConfig } from "../simulator.js";
+import { b32, leafFor as commitmentFor, issuerCommitmentFor, configCommitmentFor } from "../../domain.js";
 
 setNetworkId("undeployed");
 

@@ -11,8 +11,8 @@ import {
   type Ledger,
   ledger,
   type ClaimRecord
-} from "./managed/consequence-claim-ledger/contract/index.js";
-import { type ClaimPrivateState, claimWitnesses } from "./claim-witnesses.js";
+} from "./managed/contract/index.js";
+import { type ClaimPrivateState, claimWitnesses } from "./witnesses.js";
 
 export class ClaimLedgerSimulator {
   readonly contract: Contract<ClaimPrivateState>;

@@ -8,8 +8,8 @@
 // ever leave the witness boundary.
 
 import type { WitnessContext } from "@midnight-ntwrk/compact-runtime";
-import type { Ledger } from "./managed/silent-quorum/contract/index.js";
-import { leafFor } from "./domain.js";
+import type { Ledger } from "./managed/contract/index.js";
+import { leafFor } from "../domain.js";
 
 export type SilentQuorumPrivateState = {
   readonly identitySecret: Uint8Array;

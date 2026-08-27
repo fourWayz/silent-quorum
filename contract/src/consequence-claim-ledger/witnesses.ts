@@ -1,7 +1,7 @@
 // Silent Quorum — Consequence Claim Ledger witness implementation.
 
 import type { WitnessContext } from "@midnight-ntwrk/compact-runtime";
-import type { Ledger } from "./managed/consequence-claim-ledger/contract/index.js";
+import type { Ledger } from "./managed/contract/index.js";
 
 export type ClaimPrivateState = {
   readonly recipientSecret: Uint8Array;

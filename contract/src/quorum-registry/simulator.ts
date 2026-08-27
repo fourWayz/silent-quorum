@@ -1,5 +1,5 @@
 // Silent Quorum — Quorum Registry local circuit simulator.
-// Same pattern as silent-quorum-simulator.ts.
+// Same pattern as quorum-core/simulator.ts.
 
 import {
   type CircuitContext,
@@ -12,8 +12,8 @@ import {
   type Ledger,
   ledger,
   type QuorumRecord
-} from "./managed/quorum-registry/contract/index.js";
-import { type RegistryPrivateState, registryWitnesses } from "./registry-witnesses.js";
+} from "./managed/contract/index.js";
+import { type RegistryPrivateState, registryWitnesses } from "./witnesses.js";
 
 export type ContractAddressLike = { bytes: Uint8Array };
 

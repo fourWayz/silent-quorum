@@ -6,9 +6,9 @@
   "scripts": {
     "test": "vitest run",
     "compact": "npm run compact:core && npm run compact:registry && npm run compact:claims",
-    "compact:core": "compact compile src/silent-quorum.compact src/managed/silent-quorum",
-    "compact:registry": "compact compile src/quorum-registry.compact src/managed/quorum-registry",
-    "compact:claims": "compact compile src/consequence-claim-ledger.compact src/managed/consequence-claim-ledger"
+    "compact:core": "compact compile src/quorum-core/silent-quorum.compact src/quorum-core/managed",
+    "compact:registry": "compact compile src/quorum-registry/quorum-registry.compact src/quorum-registry/managed",
+    "compact:claims": "compact compile src/consequence-claim-ledger/consequence-claim-ledger.compact src/consequence-claim-ledger/managed"
   },
   "keywords": [],
   "license": "MIT",
