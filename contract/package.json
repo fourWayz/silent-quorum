@@ -1,11 +1,14 @@
 {
   "name": "@silent-quorum/contract",
   "version": "0.1.0",
-  "description": "Silent Quorum Milestone 1 — Compact contract, witnesses, and tests",
+  "description": "Silent Quorum protocol — Quorum Core, Quorum Registry, and Consequence Claim Ledger",
   "main": "index.js",
   "scripts": {
     "test": "vitest run",
-    "compact": "compact compile src/silent-quorum.compact src/managed/silent-quorum"
+    "compact": "npm run compact:core && npm run compact:registry && npm run compact:claims",
+    "compact:core": "compact compile src/silent-quorum.compact src/managed/silent-quorum",
+    "compact:registry": "compact compile src/quorum-registry.compact src/managed/quorum-registry",
+    "compact:claims": "compact compile src/consequence-claim-ledger.compact src/managed/consequence-claim-ledger"
   },
   "keywords": [],
   "license": "MIT",

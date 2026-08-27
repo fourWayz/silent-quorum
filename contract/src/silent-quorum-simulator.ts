@@ -27,7 +27,8 @@ export type QuorumConfig = {
   quorum: Uint8Array;
   action: Uint8Array;
   threshold: bigint;
-  recipient: Uint8Array;
+  issuerCommitment: Uint8Array;
+  recipientCommitment: Uint8Array;
   amount: bigint;
 };
 
@@ -35,16 +36,17 @@ export class SilentQuorumSimulator {
   readonly contract: Contract<SilentQuorumPrivateState>;
   circuitContext: CircuitContext<SilentQuorumPrivateState>;
 
-  constructor(config: QuorumConfig, identitySecret: Uint8Array) {
+  constructor(config: QuorumConfig, identitySecret: Uint8Array, issuerSecret: Uint8Array) {
     this.contract = new Contract<SilentQuorumPrivateState>(witnesses);
     const { currentPrivateState, currentContractState, currentZswapLocalState } =
       this.contract.initialState(
-        createConstructorContext({ identitySecret }, "0".repeat(64)),
+        createConstructorContext({ identitySecret, issuerSecret }, "0".repeat(64)),
         config.org,
         config.quorum,
         config.action,
         config.threshold,
-        config.recipient,
+        config.issuerCommitment,
+        config.recipientCommitment,
         config.amount
       );
     this.circuitContext = createCircuitContext(
@@ -62,7 +64,14 @@ export class SilentQuorumSimulator {
   public setIdentitySecret(identitySecret: Uint8Array): void {
     this.circuitContext = {
       ...this.circuitContext,
-      currentPrivateState: { identitySecret }
+      currentPrivateState: { ...this.circuitContext.currentPrivateState, identitySecret }
+    };
+  }
+
+  public setIssuerSecret(issuerSecret: Uint8Array): void {
+    this.circuitContext = {
+      ...this.circuitContext,
+      currentPrivateState: { ...this.circuitContext.currentPrivateState, issuerSecret }
     };
   }
 
@@ -71,6 +80,16 @@ export class SilentQuorumSimulator {
       this.circuitContext,
       identityCommitment
     ).context;
+    return this.getLedger();
+  }
+
+  public closeRegistration(): Ledger {
+    this.circuitContext = this.contract.impureCircuits.close_registration(this.circuitContext).context;
+    return this.getLedger();
+  }
+
+  public cancel(): Ledger {
+    this.circuitContext = this.contract.impureCircuits.cancel(this.circuitContext).context;
     return this.getLedger();
   }
 
@@ -88,9 +107,8 @@ export class SilentQuorumSimulator {
   // network. `fork()` can only simulate "two proofs built from an identical
   // starting snapshot, then applied one after another" — NOT "two proofs
   // submitted concurrently to a real ledger, whichever one the network
-  // orders first." The real race condition from ARCHITECTURE.md §8 requires
-  // an actual node/indexer to observe; see ARCHITECTURE.md and
-  // RESEARCH.md for why that question stays open after Milestone 1.
+  // orders first." The real race condition requires an actual node/indexer
+  // to observe — see ARCHITECTURE.md's "Live-devnet concurrency test".
   public fork(): SilentQuorumSimulator {
     const clone = Object.create(SilentQuorumSimulator.prototype) as SilentQuorumSimulator;
     (clone as any).contract = this.contract;

@@ -8,39 +8,33 @@
 // ever leave the witness boundary.
 
 import type { WitnessContext } from "@midnight-ntwrk/compact-runtime";
-import {
-  persistentHash,
-  CompactTypeVector,
-  Bytes32Descriptor
-} from "@midnight-ntwrk/compact-runtime";
 import type { Ledger } from "./managed/silent-quorum/contract/index.js";
+import { leafFor } from "./domain.js";
 
 export type SilentQuorumPrivateState = {
   readonly identitySecret: Uint8Array;
+  // Only the party who knows this secret can register/close/cancel — a
+  // shared-secret role gate (no signature-verification API exists in
+  // Compact 0.31.1; see ARCHITECTURE.md). Present alongside identitySecret
+  // so one simulator/test actor can play either role as needed; on live
+  // devnet the issuer and participants are ordinarily different wallets
+  // with their own separate private state.
+  readonly issuerSecret: Uint8Array;
 };
 
 export const createSilentQuorumPrivateState = (
-  identitySecret: Uint8Array
-): SilentQuorumPrivateState => ({ identitySecret });
-
-// Must match the Compact-side tag used in silent-quorum.compact's leaf hash
-// exactly, including whatever byte-padding pad(32, ...) produces there —
-// this is deliberately duplicated here rather than imported, because the
-// witness runs in a different language/runtime than the circuit and has no
-// access to Compact constants. VERIFIED empirically against the real
-// compiled contract in silent-quorum.test.ts, not assumed correct by
-// inspection alone — see ARCHITECTURE.md for the result.
-const LEAF_TAG = Uint8Array.from(
-  Buffer.from("silent-quorum:leaf:".padEnd(32, "\0"), "utf8")
-);
-
-const pairOfBytes32 = new CompactTypeVector(2, Bytes32Descriptor);
-
-function leafFor(identitySecret: Uint8Array): Uint8Array {
-  return persistentHash(pairOfBytes32, [LEAF_TAG, identitySecret]);
-}
+  identitySecret: Uint8Array,
+  issuerSecret: Uint8Array
+): SilentQuorumPrivateState => ({ identitySecret, issuerSecret });
 
 export const witnesses = {
+  get_issuer_secret: ({
+    privateState
+  }: WitnessContext<Ledger, SilentQuorumPrivateState>): [
+    SilentQuorumPrivateState,
+    Uint8Array
+  ] => [privateState, privateState.issuerSecret],
+
   get_identity_secret: ({
     privateState
   }: WitnessContext<Ledger, SilentQuorumPrivateState>): [
