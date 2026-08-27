@@ -1,0 +1,11 @@
+{
+  "name": "silent-quorum",
+  "private": true,
+  "workspaces": [
+    "contract",
+    "devnet-test"
+  ],
+  "overrides": {
+    "@midnight-ntwrk/onchain-runtime-v3": "3.0.0"
+  }
+}

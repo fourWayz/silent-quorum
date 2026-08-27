@@ -9,3 +9,11 @@ dist/
 # Compact compiler output (circuits, proving/verifying keys) - regenerate
 # via npm run compact, same convention as the official Midnight examples.
 managed/
+
+# Local wallet/private-state stores created by devnet-test runs.
+midnight-level-db/
+devnet-test/midnight-level-db/
+
+# devnet-test run artifacts (ephemeral, tied to a specific local devnet run)
+devnet-test/src/race-address.json
+devnet-test/src/result-*.json
