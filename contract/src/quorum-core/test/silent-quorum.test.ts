@@ -83,6 +83,31 @@ describe("Silent Quorum — nullifier / double-pledge resistance", () => {
   });
 });
 
+describe("Silent Quorum — identity-commitment linkability (known limitation)", () => {
+  // leafFor()/pad(32,"silent-quorum:leaf:") is NOT domain-separated by
+  // org/quorum/action — it is a pure function of the identity secret alone.
+  // Reusing the same secret across quorums therefore produces the exact
+  // same public eligibility_tree leaf in every quorum it is registered in.
+  // Nullifiers stay domain-separated (pledges are not linkable to each
+  // other), but the *registration* commitment itself is observably the
+  // same bytes on-chain in both trees. This is documented in
+  // ARCHITECTURE.md as a known limitation, not fixed here (fixing it would
+  // change the leaf/commitment format, which is outside the scope of an
+  // audit pass). Fresh secrets per quorum avoid it entirely.
+  it("reusing an identity secret produces an identical, observable leaf commitment across quorums", () => {
+    const secret = secretFor("alice");
+    const leafA = commitmentFor(secret);
+    const leafB = commitmentFor(secret);
+    expect(Buffer.from(leafA).toString("hex")).toBe(Buffer.from(leafB).toString("hex"));
+  });
+
+  it("a fresh per-quorum secret produces an unlinkable leaf commitment", () => {
+    const leafQuorumA = commitmentFor(secretFor("alice-quorum-a"));
+    const leafQuorumB = commitmentFor(secretFor("alice-quorum-b"));
+    expect(Buffer.from(leafQuorumA).toString("hex")).not.toBe(Buffer.from(leafQuorumB).toString("hex"));
+  });
+});
+
 describe("Silent Quorum — atomic threshold firing (Architecture B)", () => {
   it("does not fire before threshold (N-1 pledges)", () => {
     const sim = newSim(baseConfig(3n), secretFor("p1"));
@@ -271,6 +296,11 @@ describe("Silent Quorum — registration lifecycle (I12, I14)", () => {
     sim.closeRegistration();
     expect(() => sim.pledge()).not.toThrow();
   });
+
+  it("no reopen_registration circuit exists — closing is genuinely one-way", () => {
+    const sim = newSim(baseConfig(1n), secretFor("alice"));
+    expect((sim.contract.impureCircuits as any).reopen_registration).toBeUndefined();
+  });
 });
 
 describe("Silent Quorum — cancellation (I13, I14)", () => {
@@ -329,10 +359,24 @@ describe("Silent Quorum — deterministic configuration commitment (I15)", () =>
   it("changing any single configuration field changes config_commitment", () => {
     const config = baseConfig(3n);
     const base = newSim(config, secretFor("alice")).getLedger().config_commitment;
-    const differentThreshold = newSim({ ...config, threshold: 4n }, secretFor("alice")).getLedger().config_commitment;
-    const differentAmount = newSim({ ...config, amount: 2_000n }, secretFor("alice")).getLedger().config_commitment;
-    expect(Buffer.from(differentThreshold).toString("hex")).not.toBe(Buffer.from(base).toString("hex"));
-    expect(Buffer.from(differentAmount).toString("hex")).not.toBe(Buffer.from(base).toString("hex"));
+    const baseHex = Buffer.from(base).toString("hex");
+
+    const mutations: Array<[string, QuorumConfig]> = [
+      ["threshold", { ...config, threshold: 4n }],
+      ["amount", { ...config, amount: 2_000n }],
+      ["org", { ...config, org: b32("org:other-co") }],
+      ["quorum", { ...config, quorum: b32("quorum:q2") }],
+      ["action", { ...config, action: b32("action:layoff") }],
+      ["issuerCommitment", { ...config, issuerCommitment: issuerCommitmentFor(secretFor("other-issuer")) }],
+      ["recipientCommitment", { ...config, recipientCommitment: b32("recipient:other") }]
+    ];
+
+    for (const [field, mutated] of mutations) {
+      const mutatedHex = Buffer.from(
+        newSim(mutated, secretFor("alice")).getLedger().config_commitment
+      ).toString("hex");
+      expect(mutatedHex, `mutating ${field} should change config_commitment`).not.toBe(baseHex);
+    }
   });
 
   it("protocol_version is set and stable", () => {
