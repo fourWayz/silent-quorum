@@ -1,0 +1,78 @@
+// Silent Quorum — Quorum Registry.
+//
+// A curated discovery layer, not a verification layer. It records what a
+// single trusted operator (a shared-secret role, same limitation as Core's
+// issuer — no signature-verification API exists in Compact 0.31.1) claims
+// about a deployed Quorum Core instance. It cannot read Core's actual state
+// (no cross-contract reads in this toolchain) and therefore cannot confirm
+// any claim it stores. A client must independently read the named Core
+// address and compare config_commitment values to get real assurance.
+//
+// Deliberately centralized rather than permissionless-but-poisonable: a
+// fully decentralized, poison-resistant registry needs multi-party
+// signature authorization this toolchain doesn't have.
+
+pragma language_version >= 0.20;
+
+import CompactStandardLibrary;
+
+export enum QuorumStatus { ACTIVE, DEACTIVATED }
+
+export struct QuorumRecord {
+  coreAddress: ContractAddress;
+  configCommitment: Bytes<32>;
+  status: QuorumStatus;
+}
+
+export sealed ledger operator_commitment: Bytes<32>;
+export sealed ledger protocol_version: Uint<16>;
+export ledger quorums: Map<Bytes<32>, QuorumRecord>;
+
+constructor(operatorCommitment: Bytes<32>) {
+  operator_commitment = disclose(operatorCommitment);
+  protocol_version = 1;
+}
+
+witness get_operator_secret(): Bytes<32>;
+
+circuit assertOperator(): [] {
+  const secret = get_operator_secret();
+  const commitment = disclose(
+    persistentHash<Vector<2, Bytes<32>>>([pad(32, "quorum-registry:operator:"), secret])
+  );
+  assert(commitment == operator_commitment, "not authorized operator");
+}
+
+// First-write-wins: no update path exists for an existing quorumId, only
+// deactivate_quorum's status flip below. Registering is append-only.
+export circuit register_quorum(
+  quorumId: Bytes<32>,
+  coreAddress: ContractAddress,
+  configCommitment: Bytes<32>
+): [] {
+  assertOperator();
+  assert(!quorums.member(disclose(quorumId)), "quorum already registered");
+  quorums.insert(
+    disclose(quorumId),
+    QuorumRecord {
+      coreAddress: disclose(coreAddress),
+      configCommitment: disclose(configCommitment),
+      status: QuorumStatus.ACTIVE
+    }
+  );
+}
+
+// Irreversible — there is no reactivate circuit. Entries are never deleted.
+export circuit deactivate_quorum(quorumId: Bytes<32>): [] {
+  assertOperator();
+  assert(quorums.member(disclose(quorumId)), "unknown quorum");
+  const existing = quorums.lookup(disclose(quorumId));
+  quorums.insert(
+    disclose(quorumId),
+    QuorumRecord {
+      coreAddress: existing.coreAddress,
+      configCommitment: existing.configCommitment,
+      status: QuorumStatus.DEACTIVATED
+    }
+  );
+}
