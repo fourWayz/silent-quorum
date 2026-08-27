@@ -1,0 +1,103 @@
+// Silent Quorum — Milestone 1 contract.
+// Atomic threshold-ignition protocol: anonymous, issuer-unlinkable pledges,
+// domain-separated nullifiers, same-transaction threshold consequence.
+
+pragma language_version >= 0.20;
+
+import CompactStandardLibrary;
+
+// ---- Public (sealed) configuration, fixed at construction ----
+export sealed ledger org_id: Bytes<32>;
+export sealed ledger quorum_id: Bytes<32>;
+export sealed ledger action_id: Bytes<32>;
+export sealed ledger threshold: Uint<32>;
+export sealed ledger consequence_recipient: Bytes<32>;
+export sealed ledger consequence_amount: Uint<64>;
+
+// ---- Public protocol state ----
+export ledger eligibility_tree: HistoricMerkleTree<10, Bytes<32>>;
+export ledger pledge_nullifiers: Map<Bytes<32>, Boolean>;
+export ledger tally: Counter;
+export ledger fired: Boolean;
+export ledger consequence_balance: Uint<64>;
+
+constructor(
+  org: Bytes<32>,
+  quorum: Bytes<32>,
+  action: Bytes<32>,
+  thresholdIn: Uint<32>,
+  recipient: Bytes<32>,
+  amount: Uint<64>
+) {
+  // These are ordinary public setup values, not secrets — but Compact's
+  // compiler treats every constructor/circuit parameter as potentially
+  // private until a disclose() explicitly says otherwise (verified empirically
+  // against compiler 0.31.1; broader than only `witness`-sourced values).
+  org_id = disclose(org);
+  quorum_id = disclose(quorum);
+  action_id = disclose(action);
+  threshold = disclose(thresholdIn);
+  consequence_recipient = disclose(recipient);
+  consequence_amount = disclose(amount);
+  fired = false;
+  consequence_balance = 0;
+}
+
+// ---- Registration: issuer admits a self-generated commitment. ----
+// The issuer only ever sees identityCommitment. It never receives the
+// participant's identitySecret, so it cannot link a later pledge back
+// to the registration event.
+export circuit register(identityCommitment: Bytes<32>): [] {
+  // identityCommitment is a public commitment the participant generated
+  // themselves off-chain (Model B, §4 of the architecture spec) — the issuer
+  // submitting it here never sees the identitySecret behind it.
+  eligibility_tree.insert(disclose(identityCommitment));
+}
+
+// ---- Pledge: witness-held secret + path, never disclosed. ----
+witness get_identity_secret(): Bytes<32>;
+witness get_merkle_path(): MerkleTreePath<10, Bytes<32>>;
+
+export circuit pledge(): [] {
+  const secret = get_identity_secret();
+  const path = get_merkle_path();
+
+  // The path's embedded leaf must actually be this secret's commitment —
+  // otherwise a witness could supply a disconnected (leaf, path) pair that
+  // checks out against some valid root but has nothing to do with `secret`.
+  const leaf = persistentHash<Vector<2, Bytes<32>>>([pad(32, "silent-quorum:leaf:"), secret]);
+  assert(path.leaf == leaf, "path does not match secret");
+  // The recomputed root is disclosed so the public checkRoot comparison can
+  // run — this only ever reveals a value that must equal an already-public
+  // tree root if the path is valid; it does not reveal which leaf/path
+  // produced it (see ARCHITECTURE.md, privacy boundary).
+  const recomputedRoot = disclose(merkleTreePathRoot<10, Bytes<32>>(path));
+  assert(eligibility_tree.checkRoot(recomputedRoot), "not eligible");
+
+  const domain = persistentHash<Vector<4, Bytes<32>>>(
+    [pad(32, "silent-quorum:domain:"), org_id, quorum_id, action_id]
+  );
+  const nullifier = disclose(
+    persistentHash<Vector<2, Bytes<32>>>([secret, domain])
+  );
+
+  assert(!pledge_nullifiers.member(nullifier), "already pledged");
+  pledge_nullifiers.insert(nullifier, true);
+
+  tally.increment(1);
+
+  // Decision, made explicit rather than left as an accident of control flow
+  // (flagged as open in the pre-implementation spec, resolved here after
+  // Milestone 1 testing showed the naive version silently reverts, and
+  // therefore drops, every pledge submitted after firing): a pledge
+  // arriving after the quorum has already fired is still accepted and
+  // counted — the tally keeps incrementing — but the consequence never
+  // executes a second time. The outer `if (!fired)` guard, not an assert,
+  // is what gives I6/I7 (exactly-once, irreversible) their guarantee here.
+  if (!fired) {
+    if (tally as Uint<32> >= threshold) {
+      fired = true;
+      consequence_balance = consequence_amount;
+    }
+  }
+}
