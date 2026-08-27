@@ -1,0 +1,155 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------
+   Silent Quorum design tokens.
+
+   Visual language: a cryptographic observatory, not a DAO dashboard.
+   Color communicates protocol STATE, not decoration — see the --signal-*
+   scale below, which is the same vocabulary used across the 3D field,
+   the threshold visualization, and every status badge in the console.
+   --------------------------------------------------------------------- */
+
+:root {
+  /* Foundation */
+  --ink-950: #060708;
+  --ink-900: #0a0c0f;
+  --ink-800: #101318;
+  --ink-700: #171b21;
+  --ink-600: #20252c;
+  --ink-500: #2b313a;
+  --ink-400: #3d4450;
+  --ink-300: #5b6270;
+  --ink-200: #8a909c;
+  --ink-100: #c2c6cd;
+  --paper: #f4f2ec;
+
+  /* Signal — the protocol's single accent hue (a cool phosphor teal, not
+     Web3 purple/blue). Used for anything cryptographically "live". */
+  --signal-950: #04211d;
+  --signal-800: #0a3f37;
+  --signal-600: #12735f;
+  --signal-500: #1b9c80;
+  --signal-400: #34caa4;
+  --signal-300: #6fe6c4;
+  --signal-200: #a9f4dd;
+
+  /* Ignition — reserved exclusively for the threshold-crossing moment.
+     Never used decoratively; appearing anywhere else would cheapen it. */
+  --ignition-600: #b6741a;
+  --ignition-400: #f2a53d;
+  --ignition-200: #ffe1ab;
+
+  /* Extinguished — cancelled / muted lifecycle state */
+  --mute-500: #6b6660;
+  --mute-300: #948f88;
+
+  --background: var(--ink-950);
+  --foreground: var(--paper);
+
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+
+  /* Motion language — see ARCHITECTURE.md-style discipline applied to
+     the frontend: durations are a fixed vocabulary, not ad hoc. */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-hover: 150ms;
+  --dur-panel: 320ms;
+  --dur-reveal: 560ms;
+  --dur-ignition: 1100ms;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-ink-950: var(--ink-950);
+  --color-ink-900: var(--ink-900);
+  --color-ink-800: var(--ink-800);
+  --color-ink-700: var(--ink-700);
+  --color-ink-600: var(--ink-600);
+  --color-ink-500: var(--ink-500);
+  --color-ink-400: var(--ink-400);
+  --color-ink-300: var(--ink-300);
+  --color-ink-200: var(--ink-200);
+  --color-ink-100: var(--ink-100);
+  --color-paper: var(--paper);
+
+  --color-signal-950: var(--signal-950);
+  --color-signal-800: var(--signal-800);
+  --color-signal-600: var(--signal-600);
+  --color-signal-500: var(--signal-500);
+  --color-signal-400: var(--signal-400);
+  --color-signal-300: var(--signal-300);
+  --color-signal-200: var(--signal-200);
+
+  --color-ignition-600: var(--ignition-600);
+  --color-ignition-400: var(--ignition-400);
+  --color-ignition-200: var(--ignition-200);
+
+  --color-mute-500: var(--mute-500);
+  --color-mute-300: var(--mute-300);
+
+  --font-display: var(--font-fraunces);
+  --font-sans: var(--font-manrope);
+  --font-mono: var(--font-plex-mono);
+
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+}
+
+* {
+  border-color: var(--ink-600);
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background: var(--signal-600);
+  color: var(--ink-950);
+}
+
+/* Focus ring — visible, consistent, never suppressed */
+:focus-visible {
+  outline: 2px solid var(--signal-400);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Fine film-grain, applied once as a fixed overlay in the root layout.
+   Kept extremely subtle — texture, not noise-as-decoration. */
+.grain-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.font-mono-tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
