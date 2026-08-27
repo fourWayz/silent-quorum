@@ -69,14 +69,21 @@ export function PledgeRitual({
 
   async function handlePledge() {
     if (!secret) return;
-    // Animate through the ritual's internal steps while the single real
-    // circuit call (pledge()) runs in the background — see the caption
-    // below; this is one proof, one transaction, not four.
-    for (let i = 1; i < RITUAL_STEPS.length; i += 1) {
-      setState({ kind: "pledging", step: i });
-      await new Promise((r) => setTimeout(r, 260));
-    }
-    const result = await pledgeAction(quorum.id, secret);
+    // The real circuit call starts immediately, in parallel with the
+    // step animation below — the animation only fills whatever time the
+    // real call takes, it never adds delay on top of it. Steps 2–5 are
+    // one real proof, one real transaction, not four separate ones; see
+    // the caption below.
+    const pledgePromise = pledgeAction(quorum.id, secret);
+
+    const animateSteps = async () => {
+      for (let i = 1; i < RITUAL_STEPS.length; i += 1) {
+        setState({ kind: "pledging", step: i });
+        await new Promise((r) => setTimeout(r, 220));
+      }
+    };
+    const [result] = await Promise.all([pledgePromise, animateSteps()]);
+
     if (!result.ok) {
       setState({ kind: "error", message: result.error });
       return;

@@ -21,16 +21,16 @@ const NODES: Node[] = [
     description:
       "Each participant proves membership with a Merkle path and a domain-separated nullifier. Only the proof and the nullifier ever leave their device — never the identity secret or which leaf is theirs.",
     x: 50,
-    y: 6
+    y: 10
   },
   {
     id: "core",
     label: "Quorum Core",
-    sub: "eligibility · nullifiers · tally · threshold · consequence",
+    sub: "eligibility · nullifiers · tally · threshold",
     description:
       "The protocol's cryptographic heart. Registration, pledging, the threshold check, and firing the consequence all happen in one circuit, one proof, one transaction — verified atomic on live devnet, not just asserted.",
     x: 50,
-    y: 42
+    y: 46
   },
   {
     id: "registry",
@@ -38,7 +38,7 @@ const NODES: Node[] = [
     sub: "discovery layer",
     description:
       "A curated directory of deployed Core instances. It records what a trusted operator claims — it cannot read Core's real state, because Compact 0.31.1 has no cross-contract reads.",
-    x: 22,
+    x: 25,
     y: 82
   },
   {
@@ -47,7 +47,7 @@ const NODES: Node[] = [
     sub: "recipient layer",
     description:
       "Proves a claimant controls a recipient secret. It cannot verify the referenced quorum actually fired — the same toolchain limitation applies here, and this UI never implies otherwise.",
-    x: 78,
+    x: 75,
     y: 82
   }
 ];
@@ -58,11 +58,11 @@ export function ArchitectureDiagram() {
 
   return (
     <div>
-      <div className="relative mx-auto aspect-[4/3] w-full max-w-2xl">
+      <div className="relative mx-auto aspect-[4/3.4] w-full max-w-2xl px-4 py-6 sm:px-8">
         <svg className="absolute inset-0 h-full w-full" aria-hidden="true">
-          <line x1="50%" y1="14%" x2="50%" y2="38%" stroke="var(--ink-500)" strokeWidth={1} />
-          <line x1="50%" y1="58%" x2="26%" y2="78%" stroke="var(--ink-500)" strokeWidth={1} />
-          <line x1="50%" y1="58%" x2="74%" y2="78%" stroke="var(--ink-500)" strokeWidth={1} />
+          <line x1="50%" y1="19%" x2="50%" y2="39%" stroke="var(--ink-500)" strokeWidth={1} />
+          <line x1="50%" y1="55%" x2="29%" y2="76%" stroke="var(--ink-500)" strokeWidth={1} />
+          <line x1="50%" y1="55%" x2="71%" y2="76%" stroke="var(--ink-500)" strokeWidth={1} />
         </svg>
 
         {NODES.map((node) => {
@@ -77,17 +77,17 @@ export function ArchitectureDiagram() {
               onClick={() => setActive(node.id)}
               style={{ left: `${node.x}%`, top: `${node.y}%` }}
               className={cn(
-                "absolute -translate-x-1/2 -translate-y-1/2 rounded-xl border px-4 py-3 text-center transition-all duration-200",
-                isCore ? "w-52" : "w-40",
+                "absolute -translate-x-1/2 -translate-y-1/2 rounded-xl border px-3 py-2.5 text-center transition-all duration-200 sm:px-4 sm:py-3",
+                isCore ? "w-36 sm:w-52" : "w-28 sm:w-40",
                 isActive
                   ? "border-signal-400 bg-signal-950/70 shadow-[0_0_24px_-6px_rgba(52,202,164,0.6)]"
                   : "border-ink-600 bg-ink-900/70 hover:border-ink-400"
               )}
             >
-              <span className={cn("block font-display text-sm", isActive ? "text-signal-200" : "text-paper")}>
+              <span className={cn("block font-display text-xs sm:text-sm", isActive ? "text-signal-200" : "text-paper")}>
                 {node.label}
               </span>
-              <span className="mt-1 block font-mono text-[9px] uppercase tracking-[0.06em] text-ink-400">
+              <span className="mt-1 hidden font-mono text-[9px] uppercase tracking-[0.06em] text-ink-400 sm:block">
                 {node.sub}
               </span>
               {isCore ? (

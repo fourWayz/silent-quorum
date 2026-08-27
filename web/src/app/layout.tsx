@@ -3,6 +3,7 @@ import { Fraunces, Manrope, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { MotionProvider } from "@/components/motion-provider";
 
 // Self-hosted at build time by next/font — no runtime request to Google
 // Fonts, no external font CDN in production. Three distinct faces, each
@@ -58,11 +59,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to content
         </a>
         <div className="grain-overlay" aria-hidden="true" />
-        <SiteHeader />
-        <main id="main-content" className="flex-1">
-          {children}
-        </main>
-        <SiteFooter />
+        <MotionProvider>
+          <SiteHeader />
+          <main id="main-content" className="flex-1">
+            {children}
+          </main>
+          <SiteFooter />
+        </MotionProvider>
       </body>
     </html>
   );
