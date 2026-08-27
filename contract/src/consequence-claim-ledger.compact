@@ -1,0 +1,96 @@
+// Silent Quorum — Consequence Claim Ledger.
+//
+// Proves exactly one thing: "this claimant knows the secret behind the
+// recipient commitment they supplied." It does NOT and cannot mean "the
+// referenced Quorum Core fired" — no cross-contract state reads exist in
+// Compact 0.31.1, so this contract never sees Core's ledger at all. A
+// client must independently read Core's fired/consequence_recipient_commitment
+// before treating a claim here as meaningful. See ARCHITECTURE.md.
+//
+// Unlike Core's pledge nullifier, no secret-derived nullifier is needed for
+// uniqueness: (org, quorum, action) is already public information by
+// necessity (the caller must supply it to be looked up at all), so it can
+// be the map key directly. The recipient secret's only role is the
+// ownership proof, not deriving a hiding key — there's no anonymity set to
+// protect here the way there is for "which registered identity pledged."
+
+pragma language_version >= 0.20;
+
+import CompactStandardLibrary;
+
+export enum ClaimStatus { CLAIMED, DISPUTED }
+
+export struct ClaimRecord {
+  recipientCommitment: Bytes<32>;
+  consequenceType: Uint<8>;
+  status: ClaimStatus;
+}
+
+export sealed ledger arbiter_commitment: Bytes<32>;
+export sealed ledger protocol_version: Uint<16>;
+export ledger claims: Map<Bytes<32>, ClaimRecord>;
+
+constructor(arbiterCommitment: Bytes<32>) {
+  arbiter_commitment = disclose(arbiterCommitment);
+  protocol_version = 1;
+}
+
+circuit claimIdFor(orgId: Bytes<32>, quorumId: Bytes<32>, actionId: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<4, Bytes<32>>>(
+    [pad(32, "claim-ledger:domain:"), orgId, quorumId, actionId]
+  );
+}
+
+witness get_recipient_secret(): Bytes<32>;
+
+// One claim per (org, quorum, action) — enforced by claimId uniqueness, not
+// by anything this contract can verify about the referenced quorum.
+export circuit claim(
+  orgId: Bytes<32>,
+  quorumId: Bytes<32>,
+  actionId: Bytes<32>,
+  recipientCommitment: Bytes<32>,
+  consequenceType: Uint<8>
+): [] {
+  const claimId = disclose(claimIdFor(disclose(orgId), disclose(quorumId), disclose(actionId)));
+  assert(!claims.member(claimId), "already claimed");
+
+  const secret = get_recipient_secret();
+  const recomputed = disclose(
+    persistentHash<Vector<2, Bytes<32>>>([pad(32, "claim-ledger:recipient:"), secret])
+  );
+  assert(recomputed == recipientCommitment, "not the named recipient");
+
+  claims.insert(
+    claimId,
+    ClaimRecord {
+      recipientCommitment: disclose(recipientCommitment),
+      consequenceType: disclose(consequenceType),
+      status: ClaimStatus.CLAIMED
+    }
+  );
+}
+
+witness get_arbiter_secret(): Bytes<32>;
+
+// Irreversible — there is no un-dispute circuit.
+export circuit dispute(orgId: Bytes<32>, quorumId: Bytes<32>, actionId: Bytes<32>): [] {
+  const claimId = disclose(claimIdFor(disclose(orgId), disclose(quorumId), disclose(actionId)));
+  assert(claims.member(claimId), "no such claim");
+
+  const secret = get_arbiter_secret();
+  const commitment = disclose(
+    persistentHash<Vector<2, Bytes<32>>>([pad(32, "claim-ledger:arbiter:"), secret])
+  );
+  assert(commitment == arbiter_commitment, "not authorized arbiter");
+
+  const existing = claims.lookup(claimId);
+  claims.insert(
+    claimId,
+    ClaimRecord {
+      recipientCommitment: existing.recipientCommitment,
+      consequenceType: existing.consequenceType,
+      status: ClaimStatus.DISPUTED
+    }
+  );
+}
