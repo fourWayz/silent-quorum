@@ -1,12 +1,11 @@
 // Silent Quorum — Preprod deployment, patient variant.
 //
-// Earlier attempts skipped wallet.dust.waitForSyncedState() because it
-// didn't complete within a few minutes and was assumed hung. Other
-// Midnight builders independently report this exact step legitimately
-// taking 1-3 hours the first time (a real sync, not a stall) and that
-// killing it early is the actual cause of it "never finishing" (it
-// restarts from scratch each time). This version waits on it properly,
-// left running uninterrupted, before attempting deployment.
+// See preprod-patient-wallet.ts for why this exists: a fresh wallet
+// process needs its DUST sub-wallet fully synced (multiple hours,
+// confirmed) before it can correctly see a real DUST balance, even one
+// that already exists on-chain. This is the actual bottleneck, not
+// DUST *generation* rate — deployment succeeded immediately once this
+// sync genuinely completed.
 
 import { WebSocket } from "ws";
 // @ts-expect-error
@@ -17,14 +16,13 @@ import { writeFileSync } from "node:fs";
 import { setNetworkId } from "@midnight-ntwrk/midnight-js-network-id";
 import { deployContract } from "@midnight-ntwrk/midnight-js-contracts";
 import { CompiledContract } from "@midnight-ntwrk/midnight-js-protocol/compact-js";
-import { FluentWalletBuilder } from "@midnight-ntwrk/testkit-js";
-import { ZswapSecretKeys, DustSecretKey, LedgerParameters } from "@midnight-ntwrk/midnight-js-protocol/ledger";
 
 import * as SilentQuorum from "../../contract/src/quorum-core/managed/contract/index.js";
 import { witnesses, type SilentQuorumPrivateState } from "../../contract/src/quorum-core/witnesses.js";
 import { issuerCommitmentFor, b32 } from "../../contract/src/domain.js";
 import { buildProviders, secretFor } from "./shared.js";
 import { preprodEnvConfig, loadPreprodMnemonic } from "./preprod-env.js";
+import { PatientWalletProvider } from "./preprod-patient-wallet.js";
 
 const logger = pino({ level: "info", transport: { target: "pino-pretty" } });
 setNetworkId("preprod");
@@ -38,84 +36,6 @@ const CompiledSilentQuorum = CompiledContract.make<SilentQuorum.Contract<SilentQ
 );
 
 const ISSUER_SECRET = secretFor("preprod-issuer");
-// Minimal DevnetWalletProvider-alike built inline so we control the sync
-// wait precisely, without touching shared.ts's already-working fast path
-// used elsewhere.
-class PatientWalletProvider {
-  private constructor(
-    private readonly wallet: any,
-    private readonly zswapSecretKeys: any,
-    private readonly dustSecretKey: any,
-    private readonly keystore: any
-  ) {}
-  getCoinPublicKey() {
-    return this.zswapSecretKeys.coinPublicKey;
-  }
-  getEncryptionPublicKey() {
-    return this.zswapSecretKeys.encryptionPublicKey;
-  }
-  async balanceTx(tx: any, ttl = new Date(Date.now() + 3600_000)) {
-    const recipe = await this.wallet.balanceUnboundTransaction(
-      tx,
-      { shieldedSecretKeys: this.zswapSecretKeys, dustSecretKey: this.dustSecretKey },
-      { ttl }
-    );
-    const signedRecipe = await this.wallet.signRecipe(recipe, (payload: Uint8Array) =>
-      this.keystore.signData(payload)
-    );
-    return this.wallet.finalizeRecipe(signedRecipe);
-  }
-  submitTx(tx: any) {
-    return this.wallet.submitTransaction(tx);
-  }
-
-  static async build(mnemonic: string): Promise<PatientWalletProvider> {
-    const dustOptions = {
-      ledgerParams: LedgerParameters.initialParameters(),
-      additionalFeeOverhead: 300_000_000_000_000n,
-      feeBlocksMargin: 5
-    };
-    const builder = FluentWalletBuilder.forEnvironment(preprodEnvConfig).withDustOptions(dustOptions);
-    const { wallet, seeds, keystore } = (await builder.withMnemonic(mnemonic).buildWithoutStarting()) as any;
-    const zswapSecretKeys = ZswapSecretKeys.fromSeed(seeds.shielded);
-    const dustSecretKey = DustSecretKey.fromSeed(seeds.dust);
-    await wallet.start(zswapSecretKeys, dustSecretKey);
-
-    logger.info("Waiting for unshielded sync (fast)...");
-    await wallet.unshielded.waitForSyncedState();
-    logger.info("Unshielded synced.");
-
-    logger.info(
-      "Waiting for DUST wallet sync — other builders report this taking well over 3 hours (one case " +
-        "over 4 hours) on a first, from-scratch sync, eventually succeeding. No cap this time — left " +
-        "running until it actually resolves. Progress pings every 2 minutes."
-    );
-    // Also pings the local proof server on every heartbeat — if Docker/WSL
-    // suspends again mid-run (has happened once already this session),
-    // this makes it visible in the log immediately rather than only
-    // discovered later as an opaque failure "at the last step."
-    const pinger = setInterval(async () => {
-      let proofServerOk = false;
-      try {
-        const res = await fetch("http://127.0.0.1:16300/health", { signal: AbortSignal.timeout(3000) });
-        proofServerOk = res.ok;
-      } catch {
-        proofServerOk = false;
-      }
-      logger.info(
-        `still waiting on dust sync... (t+${process.uptime() | 0}s) proof-server: ${proofServerOk ? "OK" : "UNREACHABLE"}`
-      );
-    }, 120_000);
-    try {
-      const dustState = await wallet.dust.waitForSyncedState();
-      logger.info({ balance: (dustState as any).balance(new Date()).toString() }, "DUST wallet synced.");
-    } finally {
-      clearInterval(pinger);
-    }
-
-    return new PatientWalletProvider(wallet, zswapSecretKeys, dustSecretKey, keystore);
-  }
-}
 
 async function main() {
   const mnemonic = loadPreprodMnemonic();
