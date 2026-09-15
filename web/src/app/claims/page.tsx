@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { EnvironmentBadge } from "@/components/environment/environment-badge";
 import { ClaimsBoard } from "@/components/claims/claims-board";
@@ -24,7 +25,12 @@ export default function ClaimsPage() {
           title="Consequence Claim Ledger"
           description="Proves exactly one thing: the claimant knows the secret behind the recipient commitment they supplied. It does not — and structurally cannot — verify that the referenced quorum ever fired."
         />
-        <EnvironmentBadge kind="simulator" />
+        <div className="flex flex-col items-end gap-2">
+          <EnvironmentBadge kind="simulator" />
+          <Link href="/live" className="font-mono text-[11px] text-ink-400 hover:text-signal-300">
+            View the real Preprod deployment →
+          </Link>
+        </div>
       </div>
 
       <ClaimsBoard initialClaims={claims} eligible={eligible} />

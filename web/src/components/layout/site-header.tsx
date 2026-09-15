@@ -6,7 +6,8 @@ const NAV = [
   { href: "/protocol", label: "Protocol" },
   { href: "/console", label: "Quorums" },
   { href: "/registry", label: "Registry" },
-  { href: "/claims", label: "Claims" }
+  { href: "/claims", label: "Claims" },
+  { href: "/live", label: "Live" }
 ];
 
 export function SiteHeader() {

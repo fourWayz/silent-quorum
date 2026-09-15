@@ -22,7 +22,12 @@ export default function RegistryPage() {
           title="Quorum Registry"
           description="A single curated operator records which Quorum Core instances exist. This is a directory, not a verification layer — the Registry cannot read Core's actual on-chain state (Compact 0.31.1 has no cross-contract reads)."
         />
-        <EnvironmentBadge kind="simulator" />
+        <div className="flex flex-col items-end gap-2">
+          <EnvironmentBadge kind="simulator" />
+          <Link href="/live" className="font-mono text-[11px] text-ink-400 hover:text-signal-300">
+            View the real Preprod deployment →
+          </Link>
+        </div>
       </div>
 
       <div className="mb-10 rounded-lg border border-ink-600 bg-ink-900/40 p-4 text-sm leading-relaxed text-ink-300">

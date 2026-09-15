@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { QuorumCard } from "@/components/quorum/quorum-card";
 import { EnvironmentBadge } from "@/components/environment/environment-badge";
 import { SectionHeading } from "@/components/ui/section-heading";
@@ -19,7 +20,12 @@ export default function ConsolePage() {
           title="Active quorums"
           description="Each card below is a real, independently deployed Quorum Core instance in the simulator — the same compiled, independently audited circuits."
         />
-        <EnvironmentBadge kind="simulator" />
+        <div className="flex flex-col items-end gap-2">
+          <EnvironmentBadge kind="simulator" />
+          <Link href="/live" className="font-mono text-[11px] text-ink-400 hover:text-signal-300">
+            View the real Preprod deployment →
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
