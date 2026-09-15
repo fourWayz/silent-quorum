@@ -4,7 +4,7 @@
 // components/, environment/integration logic lives in lib/protocol/engine
 // and lib/protocol/environment.ts.
 
-export type EnvironmentKind = "simulator" | "demo" | "local-devnet" | "unconfigured";
+export type EnvironmentKind = "simulator" | "demo" | "local-devnet" | "preprod" | "unconfigured";
 
 export interface EnvironmentInfo {
   kind: EnvironmentKind;

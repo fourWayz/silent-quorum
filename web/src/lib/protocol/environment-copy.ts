@@ -4,7 +4,7 @@ import type { EnvironmentInfo } from "./types";
 // The actual connectivity probe lives in environment.ts.
 export const ENVIRONMENT_COPY: Record<EnvironmentInfo["kind"], Omit<EnvironmentInfo, "kind">> = {
   simulator: {
-    label: "Simulator",
+    label: "Demo · Simulator",
     description:
       "Every pledge here runs the real compiled Compact circuits — the same independently audited contracts — executed server-side against an in-memory ledger. Not a live network."
   },
@@ -16,6 +16,11 @@ export const ENVIRONMENT_COPY: Record<EnvironmentInfo["kind"], Omit<EnvironmentI
   "local-devnet": {
     label: "Local Devnet",
     description: "Connected to a live local Midnight devnet (node + indexer + proof server)."
+  },
+  preprod: {
+    label: "Live · Midnight Preprod",
+    description:
+      "Real deployed contracts on Midnight Preprod, read directly from the live indexer. Read-only — no transactions are submitted from this page. See PREPROD_DEPLOYMENT.md for full deployment evidence."
   },
   unconfigured: {
     label: "Unconfigured",
