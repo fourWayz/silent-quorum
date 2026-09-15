@@ -24,14 +24,41 @@ Then open `http://localhost:3000`.
 This app is explicit about its data source everywhere — see the
 environment badge on every protocol-data page:
 
-- **Simulator** (default, and what the interactive Console/Registry/Claims
-  pages run against): every pledge, registration, and claim runs the real
-  compiled Compact circuits from `contract/dist` — the exact contracts
-  audited in Milestone 2 — executed server-side (Next.js Server Actions,
-  Node runtime) against an in-memory ledger seeded once per server
-  process. It is not a mock of the protocol; it is the protocol, without a
-  network underneath it. State resets on server restart — a disclosed
-  limitation of a single-process demo, not a database.
+- **Demo · Simulator** (default, and what the interactive
+  Console/Registry/Claims pages run against): every pledge, registration,
+  and claim runs the real compiled Compact circuits from `contract/dist`
+  — the exact contracts audited in Milestone 2 — executed server-side
+  (Next.js Server Actions, Node runtime) against an in-memory ledger
+  seeded once per server process. It is not a mock of the protocol; it is
+  the protocol, without a network underneath it. State resets on server
+  restart — a disclosed limitation of a single-process demo, not a
+  database.
+- **Live · Midnight Preprod** (`/live`, badge reads exactly "Live ·
+  Midnight Preprod"): reads the three real contracts deployed to Midnight
+  Preprod directly from the live indexer
+  (`indexerPublicDataProvider` → `queryContractState`), decoded with the
+  exact same compiled `ledger()` functions the simulator uses — the same
+  decode path, fed real fetched state instead of local simulator state.
+  Nothing on that page is fabricated or backfilled from the simulator. It
+  is strictly **read-only**: no wallet is involved and no transaction can
+  be submitted from the browser. The three deployed addresses live in one
+  place, `src/lib/protocol/preprod-config.ts`, overridable via
+  `MIDNIGHT_NETWORK`, `MIDNIGHT_INDEXER_URL`, `MIDNIGHT_INDEXER_WS_URL`,
+  `MIDNIGHT_NODE_URL`, `MIDNIGHT_CORE_ADDRESS`, `MIDNIGHT_REGISTRY_ADDRESS`,
+  and `MIDNIGHT_CLAIM_LEDGER_ADDRESS` env vars (all public addresses, not
+  secrets — see the repository root's
+  [PREPROD_DEPLOYMENT.md](../PREPROD_DEPLOYMENT.md) for how they were
+  deployed and independently verified). If any read fails, the affected
+  section shows an explicit "Unavailable" panel instead of silently
+  falling back to simulator data.
+  - **No write path from the browser, on purpose.** Submitting a real
+    Preprod transaction needs a wallet that has completed its DUST sync —
+    empirically 3-5 hours per fresh process against Preprod (see
+    `PREPROD_DEPLOYMENT.md`'s "Problems Encountered"). That is
+    fundamentally incompatible with a web request/response cycle, and a
+    long-lived warm wallet singleton was judged not worth the
+    credential-handling risk for this milestone. Rather than fake a
+    transaction animation, the Preprod view stays read-only and says so.
 - **Local Devnet**: the footer's connectivity line
   (`lib/protocol/environment.ts`) makes a real GraphQL request to a local
   Midnight indexer (default `http://127.0.0.1:18088`) and reports the
@@ -54,6 +81,7 @@ a "live" number. Where a real integration doesn't exist, the UI says so.
 ```
 src/
   app/                    Next.js App Router pages
+    live/                 Read-only Live · Midnight Preprod page
   components/
     hero/                 3D Quorum Field (React Three Fiber) + hero copy
     quorum/                Console: threshold visualization, pledge ritual,
@@ -67,11 +95,16 @@ src/
     protocol/
       types.ts             Shared protocol-facing types (no rendering, no I/O)
       environment.ts        Real devnet connectivity probe (server-only)
+      preprod-config.ts      The one authoritative place holding the three
+                             deployed Preprod contract addresses + network
+                             endpoints (env-var overridable)
       engine/                The only code that touches the compiled
                              simulators directly — store.ts (in-memory
                              state), seed.ts (demo quorums), quorum.ts /
                              registry.ts / claims.ts (typed read/write
-                             functions used by Server Actions)
+                             functions used by Server Actions), and
+                             preprod.ts (real, read-only Midnight Preprod
+                             indexer integration — server-only)
       actions.ts            "use server" boundary the client components call
       identity.ts            Client-side identity-secret generation/storage
       content.ts              Static copy shared between pages
@@ -109,6 +142,19 @@ it.
   `devnet-test/src/shared.ts`'s wallet/provider patterns) is future work,
   not attempted here to keep this milestone's scope to the frontend
   experience the brief asked for.
+- **`/live` is read-only, by design, not by omission.** It reads the real
+  Preprod deployment directly from the indexer but cannot submit
+  transactions — see "No write path from the browser" above. Pledging,
+  registering, and claiming only work in the Simulator.
+- **Preprod participant count is a proxy, not a direct read.** Quorum
+  Core's `eligibility_tree` exposes no direct leaf-count accessor, so
+  `/live` shows `tally` as an honest lower bound on registered
+  participants (every pledge implies a prior registration), not a
+  separately-verified count.
+- **`/live` shows one deployed quorum.** The Preprod deployment evidence
+  in `PREPROD_DEPLOYMENT.md` covers the single flagship Core/Registry/Claim
+  Ledger instance actually deployed — it is not a multi-quorum showcase
+  the way the Simulator's Console page is.
 - **No dedicated Demo Mode autoplay.** The environment vocabulary
   (Simulator / Demo Mode / Local Devnet / Unconfigured) is fully defined,
   but only Simulator and the real devnet status check are exercised in

@@ -122,10 +122,23 @@ the real compiled contracts via `@midnight-ntwrk/compact-runtime`'s local
 simulator, plus four separate live-devnet race scenarios (see
 `ARCHITECTURE.md`). Protocol/backend scope is frozen as of Milestone 2.
 
-A frontend/demo now exists — see [web/README.md](web/README.md) — built
-against the Simulator (the same compiled contracts, executed server-side)
-plus a real, honestly-labeled local-devnet connectivity check. No wallet
-UX or mainnet deployment yet.
+All three contracts are also deployed to the real Midnight **Preprod**
+network, independently verified against the live indexer, and exercised
+with real transactions (14/14 checks passed — see
+[PREPROD_DEPLOYMENT.md](PREPROD_DEPLOYMENT.md) for full evidence:
+addresses, transaction hashes, and exact rejection messages).
+
+A frontend now exists — see [web/README.md](web/README.md) — with two
+explicitly separate, never-conflated experiences: an interactive
+**Simulator** (the same compiled contracts, executed server-side, full
+pledge/register/claim rituals) and a read-only **Live · Midnight
+Preprod** view that reads the real deployed contracts' actual state
+directly from the indexer. The Preprod view has no write path from the
+browser — submitting a real transaction needs a wallet sync that took
+multiple hours per attempt against Preprod (see
+`PREPROD_DEPLOYMENT.md`'s "Problems Encountered"), which is not something
+a web request can wait on. The Simulator remains the only place to
+actually pledge, register, claim, or dispute.
 
 ## Running the tests
 
