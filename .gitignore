@@ -18,3 +18,5 @@ devnet-test/midnight-level-db/
 devnet-test/src/*-address.json
 devnet-test/src/*-result-*.json
 devnet-test/src/result-*.json
+.vercel
+.env*
