@@ -12,7 +12,7 @@
     "compact:claims": "compact compile src/consequence-claim-ledger/consequence-claim-ledger.compact src/consequence-claim-ledger/managed"
   },
   "keywords": [],
-  "license": "MIT",
+  "license": "Apache-2.0",
   "type": "module",
   "private": true,
   "dependencies": {
